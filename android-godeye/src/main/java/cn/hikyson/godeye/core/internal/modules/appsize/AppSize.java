@@ -2,29 +2,29 @@ package cn.hikyson.godeye.core.internal.modules.appsize;
 
 import java.util.concurrent.TimeUnit;
 
+import cn.hikyson.godeye.core.GodEye;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
+import cn.hikyson.godeye.core.utils.ThreadUtil;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.Subject;
 
-public class AppSize extends ProduceableSubject<AppSizeInfo> implements Install<AppSizeContext> {
-
+public class AppSize extends ProduceableSubject<AppSizeInfo> implements Install<AppSizeConfig> {
     private Disposable disposable;
     private boolean mInstalled = false;
-    private AppSizeContext mConfig;
+    private AppSizeConfig mConfig;
 
     @Override
-    public synchronized void install(AppSizeContext config) {
+    public synchronized boolean install(AppSizeConfig config) {
         if (mInstalled) {
             L.d("AppSize already installed, ignore.");
-            return;
+            return true;
         }
         mInstalled = true;
         mConfig = config;
-        disposable = Schedulers.single().scheduleDirect(() -> AppSizeUtil.getAppSize(config.context(), new AppSizeUtil.OnGetSizeListener() {
+        disposable = ThreadUtil.computationScheduler().scheduleDirect(() -> AppSizeUtil.getAppSize(GodEye.instance().getApplication(), new AppSizeUtil.OnGetSizeListener() {
             @Override
             public void onGetSize(AppSizeInfo appSizeInfo) {
                 L.d("AppSize onGetSize: cache size: %s, data size: %s, codeSize: %s", AppSizeUtil.formatSize(appSizeInfo.cacheSize),
@@ -39,6 +39,7 @@ public class AppSize extends ProduceableSubject<AppSizeInfo> implements Install<
             }
         }), config.delayMillis(), TimeUnit.MILLISECONDS);
         L.d("AppSize installed.");
+        return true;
     }
 
     @Override
@@ -61,7 +62,7 @@ public class AppSize extends ProduceableSubject<AppSizeInfo> implements Install<
     }
 
     @Override
-    public AppSizeContext config() {
+    public AppSizeConfig config() {
         return mConfig;
     }
 

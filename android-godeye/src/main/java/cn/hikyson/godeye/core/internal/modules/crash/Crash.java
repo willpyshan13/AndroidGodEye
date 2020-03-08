@@ -17,28 +17,29 @@ import io.reactivex.subjects.Subject;
  * <p>
  * Created by kysonchao on 2017/12/18.
  */
-public class Crash extends ProduceableSubject<List<CrashInfo>> implements Install<CrashContext> {
+public class Crash extends ProduceableSubject<List<CrashInfo>> implements Install<CrashConfig> {
     private boolean mInstalled;
-    private CrashContext mConfig;
+    private CrashConfig mConfig;
 
     @Override
-    public synchronized void install(final CrashContext crashContext) {
+    public synchronized boolean install(final CrashConfig crashContext) {
         if (mInstalled) {
             L.d("Crash already installed, ignore.");
-            return;
+            return true;
         }
         Consumer<List<CrashInfo>> consumer = this::produce;
         // auto detect crash collector provider
         try {
             ReflectUtil.invokeStaticMethodUnSafe("cn.hikyson.android.godeye.xcrash.GodEyePluginXCrash", "init",
-                    new Class<?>[]{CrashContext.class, Consumer.class}, new Object[]{crashContext, consumer});
+                    new Class<?>[]{CrashConfig.class, Consumer.class}, new Object[]{crashContext, consumer});
         } catch (Exception e) {
             L.d("Crash install fail:", e);
-            return;
+            return false;
         }
         mConfig = crashContext;
         mInstalled = true;
         L.d("Crash installed.");
+        return true;
     }
 
     @Override
@@ -58,7 +59,7 @@ public class Crash extends ProduceableSubject<List<CrashInfo>> implements Instal
     }
 
     @Override
-    public CrashContext config() {
+    public CrashConfig config() {
         return mConfig;
     }
 

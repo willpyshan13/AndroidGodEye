@@ -1,5 +1,6 @@
 package cn.hikyson.godeye.core.internal.modules.battery;
 
+import cn.hikyson.godeye.core.GodEye;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
@@ -11,9 +12,9 @@ import io.reactivex.subjects.Subject;
  * 安装卸载可以任意线程
  * 发射数据子线程和主线程都有可能
  */
-public class Battery extends ProduceableSubject<BatteryInfo> implements Install<BatteryContext> {
+public class Battery extends ProduceableSubject<BatteryInfo> implements Install<BatteryConfig> {
     private BatteryEngine mBatteryEngine;
-    private BatteryContext mConfig;
+    private BatteryConfig mConfig;
 
     /**
      * 安装电池模块，任意线程
@@ -21,15 +22,16 @@ public class Battery extends ProduceableSubject<BatteryInfo> implements Install<
      * @param config
      */
     @Override
-    public synchronized void install(BatteryContext config) {
+    public synchronized boolean install(BatteryConfig config) {
         if (mBatteryEngine != null) {
             L.d("Battery already installed, ignore.");
-            return;
+            return true;
         }
         mConfig = config;
-        mBatteryEngine = new BatteryEngine(config.context(), this);
+        mBatteryEngine = new BatteryEngine(GodEye.instance().getApplication(), this);
         mBatteryEngine.work();
         L.d("Battery installed.");
+        return true;
     }
 
     /**
@@ -53,7 +55,7 @@ public class Battery extends ProduceableSubject<BatteryInfo> implements Install<
     }
 
     @Override
-    public BatteryContext config() {
+    public BatteryConfig config() {
         return mConfig;
     }
 

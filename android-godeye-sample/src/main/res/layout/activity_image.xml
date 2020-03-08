@@ -11,11 +11,23 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <Button
-            android:id="@+id/activity_image_change_layout"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Change Layout" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/activity_image_change_layout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Change Layout" />
+
+            <Button
+                android:id="@+id/activity_image_change_visibility"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Change Visibility" />
+        </LinearLayout>
 
         <ImageView
             android:id="@+id/activity_image_iv2"
@@ -28,10 +40,12 @@
             android:tint="#55ff0000" />
 
         <ImageView
+            android:id="@+id/activity_image_iv3"
             android:layout_width="50dp"
             android:layout_height="25dp"
             android:scaleType="center"
-            android:src="@drawable/image_test1" />
+            android:src="@drawable/image_test1"
+            android:visibility="gone" />
 
         <ImageView
             android:layout_width="25dp"

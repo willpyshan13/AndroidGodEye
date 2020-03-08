@@ -3,6 +3,8 @@ package cn.hikyson.godeye.core.internal.modules.traffic;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.Subject;
 
 /**
  * 流量模块
@@ -10,20 +12,21 @@ import cn.hikyson.godeye.core.utils.L;
  * <p>
  * Created by kysonchao on 2017/5/22.
  */
-public class Traffic extends ProduceableSubject<TrafficInfo> implements Install<TrafficContext> {
+public class Traffic extends ProduceableSubject<TrafficInfo> implements Install<TrafficConfig> {
     private TrafficEngine mTrafficEngine;
-    private TrafficContext mConfig;
+    private TrafficConfig mConfig;
 
     @Override
-    public synchronized void install(TrafficContext config) {
+    public synchronized boolean install(TrafficConfig config) {
         if (mTrafficEngine != null) {
             L.d("Traffic already installed, ignore.");
-            return;
+            return true;
         }
         mConfig = config;
         mTrafficEngine = new TrafficEngine(this, config.intervalMillis(), config.sampleMillis());
         mTrafficEngine.work();
         L.d("Traffic installed.");
+        return true;
     }
 
     @Override
@@ -44,7 +47,12 @@ public class Traffic extends ProduceableSubject<TrafficInfo> implements Install<
     }
 
     @Override
-    public TrafficContext config() {
+    public TrafficConfig config() {
         return mConfig;
+    }
+
+    @Override
+    protected Subject<TrafficInfo> createSubject() {
+        return BehaviorSubject.create();
     }
 }

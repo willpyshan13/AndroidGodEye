@@ -5,11 +5,12 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Process;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -19,15 +20,42 @@ import io.reactivex.schedulers.Schedulers;
  * Created by kysonchao on 2018/1/19.
  */
 public class ThreadUtil {
-    public static Scheduler sMainScheduler = AndroidSchedulers.mainThread();
-    public static Scheduler sComputationScheduler = Schedulers.computation();
+    private static boolean sNeedDetect = true;
+    private static Scheduler sMainScheduler;
+    private static Scheduler sComputationScheduler;
+
+    public static void setNeedDetectRunningThread(boolean sNeedDetect) {
+        ThreadUtil.sNeedDetect = sNeedDetect;
+    }
+
+    public static void setMainScheduler(Scheduler sMainScheduler) {
+        ThreadUtil.sMainScheduler = sMainScheduler;
+    }
+
+    public static void setComputationScheduler(Scheduler sComputationScheduler) {
+        ThreadUtil.sComputationScheduler = sComputationScheduler;
+    }
+
+    public static Scheduler mainScheduler() {
+        if (sMainScheduler != null) {
+            return sMainScheduler;
+        }
+        return AndroidSchedulers.mainThread();
+    }
+
+    public static Scheduler computationScheduler() {
+        if (sComputationScheduler != null) {
+            return sComputationScheduler;
+        }
+        return Schedulers.computation();
+    }
 
     public static boolean isMainThread() {
         return Looper.myLooper() == Looper.getMainLooper();
     }
 
     public static void ensureMainThread(String tag) {
-        if (!isMainThread()) {
+        if (sNeedDetect && !isMainThread()) {
             throw new IllegalStateException(tag + " operation must execute on main thread!");
         }
     }
@@ -37,7 +65,7 @@ public class ThreadUtil {
     }
 
     public static void ensureWorkThread(String tag) {
-        if (isMainThread()) {
+        if (sNeedDetect && isMainThread()) {
             throw new IllegalStateException(tag + " operation must execute on work thread!");
         }
     }
@@ -55,35 +83,12 @@ public class ThreadUtil {
         }
     };
 
-    public static class NamedThreadFactory implements ThreadFactory {
-        private final ThreadGroup group;
-        private final AtomicInteger threadNumber = new AtomicInteger(1);
-        private final String namePrefix;
-
-        public NamedThreadFactory(String namePrefix) {
-            SecurityManager s = System.getSecurityManager();
-            group = (s != null) ? s.getThreadGroup() :
-                    Thread.currentThread().getThreadGroup();
-            this.namePrefix = namePrefix;
-        }
-
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(group, r,
-                    namePrefix + threadNumber.getAndIncrement(), 0);
-            if (t.isDaemon()) t.setDaemon(false);
-            if (t.getPriority() != Thread.NORM_PRIORITY) {
-                t.setPriority(Thread.NORM_PRIORITY);
-            }
-            return t;
-        }
-
-    }
-
     private static final Object sLockForHandlerManager = new Object();
 
     private static Map<String, Handler> sHandlerMap = new HashMap<>();
 
-    public static Handler createIfNotExistHandler(String tag) {
+    public static @NonNull
+    Handler createIfNotExistHandler(String tag) {
         synchronized (sLockForHandlerManager) {
             Handler tmp = sHandlerMap.get(tag);
             if (tmp != null) {
@@ -97,7 +102,8 @@ public class ThreadUtil {
         }
     }
 
-    public static Handler obtainHandler(String tag) {
+    public static @Nullable
+    Handler obtainHandler(String tag) {
         synchronized (sLockForHandlerManager) {
             return sHandlerMap.get(tag);
         }

@@ -3,21 +3,23 @@ package cn.hikyson.godeye.core.internal.modules.methodcanary;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
-import cn.hikyson.methodcanary.lib.MethodCanaryConfig;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.Subject;
 
-public class MethodCanary extends ProduceableSubject<MethodsRecordInfo> implements Install<MethodCanaryContext> {
+public class MethodCanary extends ProduceableSubject<MethodsRecordInfo> implements Install<MethodCanaryConfig> {
     private boolean mInstalled = false;
-    private MethodCanaryContext mMethodCanaryContext;
+    private MethodCanaryConfig mMethodCanaryContext;
 
     @Override
-    public synchronized void install(final MethodCanaryContext methodCanaryContext) {
+    public synchronized boolean install(final MethodCanaryConfig methodCanaryContext) {
         if (this.mInstalled) {
             L.d("MethodCanary already installed, ignore.");
-            return;
+            return true;
         }
         this.mMethodCanaryContext = methodCanaryContext;
         this.mInstalled = true;
         L.d("MethodCanary installed.");
+        return true;
     }
 
     @Override
@@ -37,7 +39,7 @@ public class MethodCanary extends ProduceableSubject<MethodsRecordInfo> implemen
     }
 
     @Override
-    public MethodCanaryContext config() {
+    public MethodCanaryConfig config() {
         return mMethodCanaryContext;
     }
 
@@ -61,7 +63,7 @@ public class MethodCanary extends ProduceableSubject<MethodsRecordInfo> implemen
                 return;
             }
             cn.hikyson.methodcanary.lib.MethodCanary.get().stop(tag
-                    , new MethodCanaryConfig(this.mMethodCanaryContext.lowCostMethodThresholdMillis() * 1000000), (sessionTag, startNanoTime, stopNanoTime, methodEventMap) -> {
+                    , new cn.hikyson.methodcanary.lib.MethodCanaryConfig(this.mMethodCanaryContext.lowCostMethodThresholdMillis() * 1000000), (sessionTag, startNanoTime, stopNanoTime, methodEventMap) -> {
                         long start0 = System.currentTimeMillis();
                         MethodsRecordInfo methodsRecordInfo = MethodCanaryConverter.convertToMethodsRecordInfo(startNanoTime, stopNanoTime, methodEventMap);
                         long start1 = System.currentTimeMillis();
@@ -78,5 +80,10 @@ public class MethodCanary extends ProduceableSubject<MethodsRecordInfo> implemen
 
     public synchronized boolean isRunning(String tag) {
         return cn.hikyson.methodcanary.lib.MethodCanary.get().isRunning(tag);
+    }
+
+    @Override
+    protected Subject<MethodsRecordInfo> createSubject() {
+        return BehaviorSubject.create();
     }
 }

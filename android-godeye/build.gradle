@@ -1,5 +1,7 @@
 apply plugin: 'com.android.library'
 
+apply from: rootProject.file('gradle/gradle-jacoco-support.gradle')
+
 android {
     compileSdkVersion Integer.parseInt(COMPILE_SDK_VERSION)
     buildToolsVersion BUILD_TOOLS_VERSION
@@ -22,10 +24,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
     testOptions {
         unitTests {
             includeAndroidResources = true
+            returnDefaultValues = true
         }
     }
 }
@@ -33,7 +35,17 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     testImplementation 'junit:junit:4.12'
+    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation 'org.mockito:mockito-core:2.8.9'
+    testImplementation 'org.robolectric:robolectric:4.3'
+    testImplementation "androidx.fragment:fragment-testing:1.1.0"
+    testImplementation "org.powermock:powermock-module-junit4:1.7.3"
+    testImplementation "org.powermock:powermock-module-junit4-rule:1.7.3"
+    testImplementation "org.powermock:powermock-api-mockito2:1.7.3"
+    testImplementation "org.powermock:powermock-classloading-xstream:1.7.3"
+    androidTestImplementation 'androidx.test:core:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     api 'com.google.code.gson:gson:2.8.5'

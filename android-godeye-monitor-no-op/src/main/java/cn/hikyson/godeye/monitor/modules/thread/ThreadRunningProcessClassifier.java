@@ -1,5 +1,5 @@
 package cn.hikyson.godeye.monitor.modules.thread;
 
+@Deprecated
 public interface ThreadRunningProcessClassifier {
-    ThreadRunningProcess classify(ThreadInfo threadInfo);
 }

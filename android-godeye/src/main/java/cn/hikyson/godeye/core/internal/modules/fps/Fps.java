@@ -1,9 +1,12 @@
 package cn.hikyson.godeye.core.internal.modules.fps;
 
+import cn.hikyson.godeye.core.GodEye;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
 import cn.hikyson.godeye.core.utils.ThreadUtil;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.Subject;
 
 /**
  * fps模块
@@ -12,12 +15,12 @@ import cn.hikyson.godeye.core.utils.ThreadUtil;
  * 发射数据在子线程
  * Created by kysonchao on 2017/11/22.
  */
-public class Fps extends ProduceableSubject<FpsInfo> implements Install<FpsContext> {
+public class Fps extends ProduceableSubject<FpsInfo> implements Install<FpsConfig> {
     private FpsEngine mFpsEngine;
-    private FpsContext mConfig;
+    private FpsConfig mConfig;
 
     @Override
-    public void install(final FpsContext config) {
+    public boolean install(final FpsConfig config) {
         if (ThreadUtil.isMainThread()) {
             installInMain(config);
         } else {
@@ -28,15 +31,16 @@ public class Fps extends ProduceableSubject<FpsInfo> implements Install<FpsConte
                 }
             });
         }
+        return true;
     }
 
-    private synchronized void installInMain(FpsContext config) {
+    private synchronized void installInMain(FpsConfig config) {
         if (mFpsEngine != null) {
             L.d("Fps already installed, ignore.");
             return;
         }
         mConfig = config;
-        mFpsEngine = new FpsEngine(config.context(), this, config.intervalMillis());
+        mFpsEngine = new FpsEngine(GodEye.instance().getApplication(), this, config.intervalMillis());
         mFpsEngine.work();
         L.d("Fps installed.");
     }
@@ -47,7 +51,7 @@ public class Fps extends ProduceableSubject<FpsInfo> implements Install<FpsConte
     }
 
     @Override
-    public FpsContext config() {
+    public FpsConfig config() {
         return mConfig;
     }
 
@@ -74,5 +78,10 @@ public class Fps extends ProduceableSubject<FpsInfo> implements Install<FpsConte
         mFpsEngine.shutdown();
         mFpsEngine = null;
         L.d("Fps uninstalled.");
+    }
+
+    @Override
+    protected Subject<FpsInfo> createSubject() {
+        return BehaviorSubject.create();
     }
 }

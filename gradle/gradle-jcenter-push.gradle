@@ -1,10 +1,12 @@
+//bintrayKey: [https://bintray.com/profile/edit](https://bintray.com/profile/edit) API Key
+
 apply plugin: 'com.novoda.bintray-release'
 
 publish {
     userOrg = POM_DEVELOPER_ID
     groupId = GROUP
     artifactId = POM_ARTIFACT_ID
-    publishVersion = VERSION_NAME
+    publishVersion = rootProject.ext.REAL_VERSION_NAME
     desc = POM_DESCRIPTION
     website = POM_URL
 }

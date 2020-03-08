@@ -12,7 +12,7 @@ android:
     - extra-android-support
 
 jdk:
-  - oraclejdk8
+    - oraclejdk8
 
 before_install:
     - mkdir "$ANDROID_HOME/licenses" || true
@@ -28,18 +28,30 @@ install:
     - sdkmanager --list || true
 
 script:
-    - ./gradlew clean build
+    - ./gradlew clean build jacocoTestReport
+    - ./gradlew assembleRelease
 
 notifications:
     email:
         - tech@hikyson.cn
 
+before_deploy:
+    - ./gradlew generateChangelogOfNewVersion
+
 deploy:
-    provider: script
-    script: echo deploying to jcenter... && ./gradlew clean build bintrayUpload -PbintrayUser=kyson -PbintrayKey=$BINTRAY_KEY -PdryRun=false && echo deployed to jcenter.
-    on:
-      tags: true
-      branch: master
+    - provider: script
+      script: echo deploying to jcenter... && ./gradlew clean build bintrayUpload -PbintrayUser=kyson -PbintrayKey=$BINTRAY_KEY -PdryRun=false && echo deployed to jcenter.
+      on:
+        tags: true
+        branch: master
+    - provider: releases
+      api_key: $GITHUB_TOKEN
+      file: "./android-godeye-sample/build/outputs/apk/release/android-godeye-sample-release.apk"
+      release_notes_file: "./CHANGELOG_NEW_VERSION.tmp"
+      skip_cleanup: true
+      on:
+        tags: true
+        branch: master
 
 after_success:
-    - echo I am done.
+    - bash <(curl -s https://codecov.io/bash) && echo I am done, Release url:https://github.com/Kyson/AndroidGodEye/releases and CodeCov:https://codecov.io/gh/Kyson/AndroidGodEye

@@ -3,6 +3,8 @@ package cn.hikyson.godeye.core.internal.modules.memory;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.Subject;
 
 /**
  * heap模块
@@ -10,20 +12,21 @@ import cn.hikyson.godeye.core.utils.L;
  * 发射数据在子线程
  * Created by kysonchao on 2017/11/22.
  */
-public class Heap extends ProduceableSubject<HeapInfo> implements Install<HeapContext> {
+public class Heap extends ProduceableSubject<HeapInfo> implements Install<HeapConfig> {
     private HeapEngine mHeapEngine;
-    private HeapContext mConfig;
+    private HeapConfig mConfig;
 
     @Override
-    public synchronized void install(HeapContext heapContext) {
+    public synchronized boolean install(HeapConfig heapContext) {
         if (mHeapEngine != null) {
             L.d("Heap already installed, ignore.");
-            return;
+            return true;
         }
         mConfig = heapContext;
         mHeapEngine = new HeapEngine(this, heapContext.intervalMillis());
         mHeapEngine.work();
         L.d("Heap installed.");
+        return true;
     }
 
     @Override
@@ -44,7 +47,12 @@ public class Heap extends ProduceableSubject<HeapInfo> implements Install<HeapCo
     }
 
     @Override
-    public HeapContext config() {
+    public HeapConfig config() {
         return mConfig;
+    }
+
+    @Override
+    protected Subject<HeapInfo> createSubject() {
+        return BehaviorSubject.create();
     }
 }

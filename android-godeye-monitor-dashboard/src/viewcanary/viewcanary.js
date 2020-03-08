@@ -40,7 +40,6 @@ class ViewCanary extends Component {
         this.renderItem = this.renderItem.bind(this);
         this.refresh = this.refresh.bind(this);
         this.getBgColor = this.getBgColor.bind(this);
-        this.inspectCurrentActivity = this.inspectCurrentActivity.bind(this);
         this.state = {
             searchText: null,
             show: false,
@@ -79,10 +78,6 @@ class ViewCanary extends Component {
         }
     }
 
-    inspectCurrentActivity() {
-        this.props.globalWs.sendMessage('{"moduleName": "viewCanary","payload":"inspect"}');
-    }
-
     renderItem(issues, key) {
         let screenHeight = issues.screenHeight
         let screenWidth = issues.screenWidth
@@ -118,7 +113,7 @@ class ViewCanary extends Component {
                 left: e.rect.left / ratio,
                 top: e.rect.top / ratio,
                 borderStyle:'solid',
-                borderWidth: e.hasBackground ? 1 : 0,
+                borderWidth: 1,
                 width: (e.rect.right - e.rect.left) / ratio,
                 height: (e.rect.bottom - e.rect.top) / ratio}}><div style= {{textAlignVertical: 'center',position: 'relative', overflow: 'hidden', color: this.getBgColor(e.textOverDrawTimes, true), fontSize: e.textSize? e.textSize / (ratio) : 10}}>{e.text ? e.text : ''}</div></div>
             )
@@ -131,14 +126,17 @@ class ViewCanary extends Component {
             depthOnPop.push(
                 <div style={{
                 position:'absolute',
-                zIndex: 50,
-                backgroundColor: e.depth > 9 ? '#FF8080' : 'transparent',
+                zIndex: e.depth,
+                backgroundColor: e.depth >= issues.maxDepth ? '#FF8080' : 'transparent',
                 left: e.rect.left / ratio,
                 top: e.rect.top / ratio,
                 borderStyle:'solid',
-                borderWidth: e.hasBackground ? 1 : 0,
+                borderWidth: 1,
                 width: (e.rect.right - e.rect.left) / ratio,
-                height: (e.rect.bottom - e.rect.top) / ratio}}><div style= {{textAlignVertical: 'center',position: 'relative', overflow: 'hidden', fontSize: e.textSize? e.textSize / (ratio) : 10}}>{e.text ? e.text : ''}</div></div>
+                height: (e.rect.bottom - e.rect.top) / ratio}}>
+                <div style= {{zIndex: e.depth+1, textAlignVertical: 'center',position: 'relative', overflow: 'hidden', fontSize: e.textSize? e.textSize / (ratio) : 10}}>{e.text ? e.text : ''}
+                </div>
+                </div>
             )
         })
         return (
@@ -180,16 +178,14 @@ class ViewCanary extends Component {
               onSearch={value => this.setState({searchText: value})}
           />
             &nbsp;&nbsp;
-            <Button style={{marginRight: 8}} onClick={this.inspectCurrentActivity}>Inspect</Button>
             <Button onClick={this.handleClear}>Clear</Button>
-
         </span>)
     }
 
     render() {
         return (
             <Card title="View Canary(问题视图)" extra={this.renderExtra()}>
-                <div style={{height: 690, overflow: 'auto'}}>
+                <div style={{height: 600, overflow: 'auto'}}>
                     {this.renderTimelines()}
                 </div>
             </Card>);

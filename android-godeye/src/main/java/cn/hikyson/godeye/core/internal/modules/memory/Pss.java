@@ -1,8 +1,11 @@
 package cn.hikyson.godeye.core.internal.modules.memory;
 
+import cn.hikyson.godeye.core.GodEye;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.Subject;
 
 /**
  * pss模块
@@ -10,20 +13,21 @@ import cn.hikyson.godeye.core.utils.L;
  * 发射数据在子线程
  * Created by kysonchao on 2017/11/22.
  */
-public class Pss extends ProduceableSubject<PssInfo> implements Install<PssContext> {
+public class Pss extends ProduceableSubject<PssInfo> implements Install<PssConfig> {
     private PssEngine mPssEngine;
-    private PssContext mConfig;
+    private PssConfig mConfig;
 
     @Override
-    public synchronized void install(PssContext config) {
+    public synchronized boolean install(PssConfig config) {
         if (mPssEngine != null) {
             L.d("Pss already installed, ignore.");
-            return;
+            return true;
         }
         mConfig = config;
-        mPssEngine = new PssEngine(config.context(), this, config.intervalMillis());
+        mPssEngine = new PssEngine(GodEye.instance().getApplication(), this, config.intervalMillis());
         mPssEngine.work();
         L.d("Pss installed.");
+        return true;
     }
 
     @Override
@@ -44,7 +48,12 @@ public class Pss extends ProduceableSubject<PssInfo> implements Install<PssConte
     }
 
     @Override
-    public PssContext config() {
+    public PssConfig config() {
         return mConfig;
+    }
+
+    @Override
+    protected Subject<PssInfo> createSubject() {
+        return BehaviorSubject.create();
     }
 }

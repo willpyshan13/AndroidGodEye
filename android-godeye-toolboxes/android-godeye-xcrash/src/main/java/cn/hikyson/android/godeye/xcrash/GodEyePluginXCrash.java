@@ -13,7 +13,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import cn.hikyson.godeye.core.internal.modules.crash.CrashContext;
+import cn.hikyson.godeye.core.GodEye;
+import cn.hikyson.godeye.core.internal.modules.crash.CrashConfig;
 import cn.hikyson.godeye.core.internal.modules.crash.CrashInfo;
 import cn.hikyson.godeye.core.utils.L;
 import io.reactivex.functions.Consumer;
@@ -32,7 +33,7 @@ public class GodEyePluginXCrash {
      * @param crashContext
      * @param consumer
      */
-    public static void init(CrashContext crashContext, Consumer<List<CrashInfo>> consumer) {
+    public static void init(CrashConfig crashContext, Consumer<List<CrashInfo>> consumer) {
         ICrashCallback callback = (logPath, emergency) -> {
             try {
                 sendThenDeleteCrashLog(logPath, emergency, crashContext, consumer);
@@ -40,8 +41,8 @@ public class GodEyePluginXCrash {
                 L.e(e);
             }
         };
-        XCrash.init(crashContext.context(), new XCrash.InitParameters()
-                .setAppVersion(getAppVersion(crashContext.context()))
+        XCrash.init(GodEye.instance().getApplication(), new XCrash.InitParameters()
+                .setAppVersion(getAppVersion(GodEye.instance().getApplication()))
                 .setJavaRethrow(true)
                 .setJavaLogCountMax(10)
                 .setJavaDumpAllThreadsWhiteList(new String[]{"^main$", "^Binder:.*", ".*Finalizer.*"})
@@ -67,7 +68,7 @@ public class GodEyePluginXCrash {
         });
     }
 
-    private static void sendThenDeleteCrashLog(String logPath, String emergency, CrashContext crashContext, Consumer<List<CrashInfo>> consumer) throws Exception {
+    private static void sendThenDeleteCrashLog(String logPath, String emergency, CrashConfig crashContext, Consumer<List<CrashInfo>> consumer) throws Exception {
         if (emergency != null || crashContext.immediate()) {// if emergency or immediate,output right now
             L.d("Crash produce message when emergency or immediate, crash count:%s, emergency:%s, logPath:%s", 1, emergency, logPath);
             consumer.accept(Collections.singletonList(wrapCrashMessage(TombstoneParser.parse(logPath, emergency))));

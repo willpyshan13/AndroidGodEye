@@ -1,9 +1,12 @@
 package cn.hikyson.godeye.core.internal.modules.memory;
 
 
+import cn.hikyson.godeye.core.GodEye;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.Subject;
 
 /**
  * ram模块
@@ -11,20 +14,21 @@ import cn.hikyson.godeye.core.utils.L;
  * 发射数据在子线程
  * Created by kysonchao on 2017/11/22.
  */
-public class Ram extends ProduceableSubject<RamInfo> implements Install<RamContext> {
+public class Ram extends ProduceableSubject<RamInfo> implements Install<RamConfig> {
     private RamEngine mRamEngine;
-    private RamContext mConfig;
+    private RamConfig mConfig;
 
     @Override
-    public synchronized void install(RamContext config) {
+    public synchronized boolean install(RamConfig config) {
         if (mRamEngine != null) {
             L.d("Ram already installed, ignore.");
-            return;
+            return true;
         }
         mConfig = config;
-        mRamEngine = new RamEngine(config.context(), this, config.intervalMillis());
+        mRamEngine = new RamEngine(GodEye.instance().getApplication(), this, config.intervalMillis());
         mRamEngine.work();
         L.d("Ram installed.");
+        return true;
     }
 
     @Override
@@ -46,7 +50,12 @@ public class Ram extends ProduceableSubject<RamInfo> implements Install<RamConte
     }
 
     @Override
-    public RamContext config() {
+    public RamConfig config() {
         return mConfig;
+    }
+
+    @Override
+    protected Subject<RamInfo> createSubject() {
+        return BehaviorSubject.create();
     }
 }

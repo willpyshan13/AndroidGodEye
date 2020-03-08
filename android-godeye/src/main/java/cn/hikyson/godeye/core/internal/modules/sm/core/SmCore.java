@@ -3,7 +3,6 @@ package cn.hikyson.godeye.core.internal.modules.sm.core;
 import android.content.Context;
 import android.os.Looper;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +20,7 @@ public final class SmCore {
     private StackSampler stackSampler;
     private CpuSampler cpuSampler;
 
-    private List<BlockInterceptor> mInterceptorChain = new LinkedList<>();
+    private BlockListener mBlockListener;
 
     private long mLongBlockThresholdMillis;
 
@@ -45,7 +44,7 @@ public final class SmCore {
 
             @Override
             public void onBlockEvent(final long blockTimeMillis, final long threadBlockTimeMillis, final boolean longBlock, final long eventStartTimeMilliis, final long eventEndTimeMillis, long longBlockThresholdMillis, long shortBlockThresholdMillis) {
-                ThreadUtil.sComputationScheduler.scheduleDirect(() -> {
+                ThreadUtil.computationScheduler().scheduleDirect(() -> {
                     if (AndroidDebug.isDebugging()) {// if debugging, then ignore
                         return;
                     }
@@ -53,7 +52,7 @@ public final class SmCore {
                         ThreadUtil.sMain.execute(() -> Notifier.notice(GodEye.instance().getApplication()
                                 , new Notifier.Config("AndroidGodEye", "Block!", "Install Android Studio plugin 'AndroidGodEye' to find the detail.")));
                     }
-                    if (longBlock) {//短卡顿
+                    if (longBlock) {
                         //如果是长卡顿，那么需要记录很多信息
                         final boolean cpuBusy = cpuSampler.isCpuBusy(eventStartTimeMilliis, eventEndTimeMillis);
                         //这里短卡顿基本是dump不到数据的，因为dump延时一般都会比短卡顿时间久
@@ -62,19 +61,15 @@ public final class SmCore {
                         final MemoryInfo memoryInfo = new MemoryInfo(MemoryUtil.getAppHeapInfo(), MemoryUtil.getAppPssInfo(mContext), MemoryUtil.getRamInfo(mContext));
                         LongBlockInfo blockBaseinfo = new LongBlockInfo(eventStartTimeMilliis, eventEndTimeMillis, threadBlockTimeMillis,
                                 blockTimeMillis, cpuBusy, cpuInfos, threadStackEntries, memoryInfo);
-                        if (!mInterceptorChain.isEmpty()) {
-                            for (BlockInterceptor interceptor : mInterceptorChain) {
-                                interceptor.onLongBlock(context, blockBaseinfo);
-                            }
+                        if (mBlockListener != null) {
+                            mBlockListener.onLongBlock(context, blockBaseinfo);
                         }
                     } else {
                         final MemoryInfo memoryInfo = new MemoryInfo(MemoryUtil.getAppHeapInfo(), MemoryUtil.getAppPssInfo(mContext), MemoryUtil.getRamInfo(mContext));
                         ShortBlockInfo shortBlockInfo = new ShortBlockInfo(eventStartTimeMilliis, eventEndTimeMillis, threadBlockTimeMillis,
                                 blockTimeMillis, memoryInfo);
-                        if (!mInterceptorChain.isEmpty()) {
-                            for (BlockInterceptor interceptor : mInterceptorChain) {
-                                interceptor.onShortBlock(context, shortBlockInfo);
-                            }
+                        if (mBlockListener != null) {
+                            mBlockListener.onShortBlock(context, shortBlockInfo);
                         }
                     }
                 });
@@ -100,8 +95,8 @@ public final class SmCore {
         }
     }
 
-    public void addBlockInterceptor(BlockInterceptor blockInterceptor) {
-        mInterceptorChain.add(blockInterceptor);
+    public void setBlockListener(BlockListener blockListener) {
+        mBlockListener = blockListener;
     }
 
     public void install() {

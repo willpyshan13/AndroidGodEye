@@ -5,6 +5,7 @@ import android.os.Handler;
 
 import androidx.fragment.app.Fragment;
 
+import cn.hikyson.godeye.core.GodEye;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
@@ -17,17 +18,17 @@ import io.reactivex.subjects.Subject;
  * 安装卸载可以任意线程
  * Created by kysonchao on 2018/1/25.
  */
-public class Pageload extends ProduceableSubject<PageLifecycleEventInfo> implements Install<PageloadContext> {
+public class Pageload extends ProduceableSubject<PageLifecycleEventInfo> implements Install<PageloadConfig> {
     private static final String PAGELOAD_HANDLER = "godeye-pageload";
     private ActivityLifecycleCallbacks mActivityLifecycleCallbacks;
-    private PageloadContext mConfig;
+    private PageloadConfig mConfig;
     private boolean mInstalled = false;
 
     @Override
-    public synchronized void install(PageloadContext config) {
+    public synchronized boolean install(PageloadConfig config) {
         if (mInstalled) {
             L.d("Pageload already installed, ignore.");
-            return;
+            return true;
         }
         this.mConfig = config;
         PageLifecycleRecords pageLifecycleRecords = new PageLifecycleRecords();
@@ -39,9 +40,10 @@ public class Pageload extends ProduceableSubject<PageLifecycleEventInfo> impleme
         }
         Handler handler = ThreadUtil.createIfNotExistHandler(PAGELOAD_HANDLER);
         this.mActivityLifecycleCallbacks = new ActivityLifecycleCallbacks(pageLifecycleRecords, pageInfoProvider, this, handler);
-        this.mConfig.application().registerActivityLifecycleCallbacks(mActivityLifecycleCallbacks);
+        GodEye.instance().getApplication().registerActivityLifecycleCallbacks(mActivityLifecycleCallbacks);
         this.mInstalled = true;
         L.d("Pageload installed.");
+        return true;
     }
 
     @Override
@@ -55,7 +57,7 @@ public class Pageload extends ProduceableSubject<PageLifecycleEventInfo> impleme
             L.d("Pageload already uninstalled, ignore.");
             return;
         }
-        this.mConfig.application().unregisterActivityLifecycleCallbacks(mActivityLifecycleCallbacks);
+        GodEye.instance().getApplication().unregisterActivityLifecycleCallbacks(mActivityLifecycleCallbacks);
         mActivityLifecycleCallbacks = null;
         ThreadUtil.destoryHandler(PAGELOAD_HANDLER);
         this.mInstalled = false;
@@ -68,7 +70,7 @@ public class Pageload extends ProduceableSubject<PageLifecycleEventInfo> impleme
     }
 
     @Override
-    public PageloadContext config() {
+    public PageloadConfig config() {
         return mConfig;
     }
 
