@@ -41,6 +41,7 @@ public class PageDrawMonitor {
         view.getViewTreeObserver().addOnDrawListener(onDrawListener);
         runOnDrawEnd(view, onDrawListener, 3, onDrawCallback);
     }
+
     private void runOnDrawEnd(View view, ViewTreeObserver.OnDrawListener onDrawListener, int maxPostTimes, @NonNull ViewUtil.OnDrawCallback onDrawCallback) {
         if (view == null || onDrawListener == null) {
             return;
@@ -68,7 +69,7 @@ public class PageDrawMonitor {
                 }
             }, FRAME_CALLBACK_TOKEN);
         } catch (Throwable throwable) {
-            L.e(throwable.getMessage());
+            L.w(throwable.getMessage());
         }
     }
     private interface OnTraversalFinishListener{

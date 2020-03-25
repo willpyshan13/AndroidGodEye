@@ -49,6 +49,11 @@ public class LTest {
             }
 
             @Override
+            public void w(String msg) {
+
+            }
+
+            @Override
             public void e(String msg) {
                 Assert.fail();
             }
@@ -76,6 +81,11 @@ public class LTest {
             }
 
             @Override
+            public void w(String msg) {
+
+            }
+
+            @Override
             public void e(String msg) {
                 Assert.fail();
             }
@@ -97,6 +107,11 @@ public class LTest {
             }
 
             @Override
+            public void w(String msg) {
+
+            }
+
+            @Override
             public void e(String msg) {
                 Assert.assertTrue(msg.contains("AndroidGodEye-Exception"));
             }
@@ -110,11 +125,42 @@ public class LTest {
     }
 
     @Test
+    public void w() {
+        L.setProxy(new L.LogProxy() {
+            @Override
+            public void d(String msg) {
+                Assert.fail();
+            }
+
+            @Override
+            public void w(String msg) {
+                Assert.assertFalse(msg.isEmpty());
+            }
+
+            @Override
+            public void e(String msg) {
+                Assert.fail();
+            }
+
+            @Override
+            public void onRuntimeException(RuntimeException e) {
+                Assert.fail();
+            }
+        });
+        L.w(new Object());
+    }
+
+    @Test
     public void onRuntimeException() {
         L.setProxy(new L.LogProxy() {
             @Override
             public void d(String msg) {
                 Assert.fail();
+            }
+
+            @Override
+            public void w(String msg) {
+
             }
 
             @Override

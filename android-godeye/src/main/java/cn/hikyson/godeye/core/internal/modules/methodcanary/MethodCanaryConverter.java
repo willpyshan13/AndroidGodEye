@@ -7,15 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import cn.hikyson.methodcanary.lib.MethodEnterEvent;
 import cn.hikyson.methodcanary.lib.MethodEvent;
-import cn.hikyson.methodcanary.lib.MethodExitEvent;
 import cn.hikyson.methodcanary.lib.ThreadInfo;
 
 class MethodCanaryConverter {
 
-    static MethodsRecordInfo convertToMethodsRecordInfo(long startTimeNanos, long stopTimeNanos, Map<ThreadInfo, List<MethodEvent>> methodEventMap) {
-        MethodsRecordInfo methodsRecordInfo = new MethodsRecordInfo(startTimeNanos, stopTimeNanos, new ArrayList<>());
+    static MethodsRecordInfo convertToMethodsRecordInfo(long startMillis, long stopMillis, Map<ThreadInfo, List<MethodEvent>> methodEventMap) {
+        MethodsRecordInfo methodsRecordInfo = new MethodsRecordInfo(startMillis, stopMillis, new ArrayList<>());
         if (methodEventMap == null || methodEventMap.isEmpty()) {
             return methodsRecordInfo;
         }
@@ -24,23 +22,24 @@ class MethodCanaryConverter {
             List<MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo> methodInfos = new ArrayList<>(methodEvents.size());
             Stack<MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo> methodEventsStackOfCurrentThread = new Stack<>();
             for (MethodEvent methodEvent : methodEvents) {
-                if (methodEvent instanceof MethodEnterEvent) {
+                if (methodEvent.isEnter) {
                     MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo methodInfo = new MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo();
                     methodInfo.className = methodEvent.className;
                     methodInfo.methodAccessFlag = methodEvent.methodAccessFlag;
                     methodInfo.methodName = methodEvent.methodName;
                     methodInfo.methodDesc = methodEvent.methodDesc;
-                    methodInfo.start = methodEvent.eventNanoTime;
+                    methodInfo.startMillis = methodEvent.eventTimeMillis;
                     methodInfo.stack = methodEventsStackOfCurrentThread.size();
                     methodInfos.add(methodInfo);
                     methodEventsStackOfCurrentThread.push(methodInfo);
-                } else if (methodEvent instanceof MethodExitEvent) {
+                } else {
                     MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo methodInfo = null;
                     if (!methodEventsStackOfCurrentThread.empty()) {
                         methodInfo = methodEventsStackOfCurrentThread.pop();
                     }
                     if (methodInfo != null) {
-                        methodInfo.end = methodEvent.eventNanoTime;
+                        methodInfo.endMillis = methodEvent.eventTimeMillis;
+//                        assertMethodEventPair(methodInfo, methodEvent);
                     }
                 }
             }
@@ -49,9 +48,21 @@ class MethodCanaryConverter {
         return methodsRecordInfo;
     }
 
+    private static void assertMethodEventPair(MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo methodInfo, MethodEvent methodExitEvent) {
+        if (!methodInfo.className.equals(methodExitEvent.className)
+                || !methodInfo.className.equals(methodExitEvent.pairMethodEvent.className)
+                || !methodInfo.methodName.equals(methodExitEvent.methodName)
+                || !methodInfo.methodName.equals(methodExitEvent.pairMethodEvent.methodName)
+                || !methodInfo.methodDesc.equals(methodExitEvent.methodDesc)
+                || !methodInfo.methodDesc.equals(methodExitEvent.pairMethodEvent.methodDesc)
+        ) {
+            throw new IllegalStateException("Error assertMethodEventPair, methodInfo: " + methodInfo + ", methodExitEvent: " + methodExitEvent);
+        }
+    }
+
     static void filter(MethodsRecordInfo methodsRecordInfo, MethodCanaryConfig methodCanaryContext) {
         int maxMethodCountSingleThreadByCost = methodCanaryContext.maxMethodCountSingleThreadByCost();
-        Comparator<MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo> methodInfoCostComparator = methodInfoCostComparator(methodsRecordInfo.start, methodsRecordInfo.end);
+        Comparator<MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo> methodInfoCostComparator = methodInfoCostComparator(methodsRecordInfo.startMillis, methodsRecordInfo.endMillis);
         List<MethodsRecordInfo.MethodInfoOfThreadInfo> methodInfoOfThreadInfos = methodsRecordInfo.methodInfoOfThreadInfos;
         if (methodInfoOfThreadInfos != null && !methodInfoOfThreadInfos.isEmpty()) {
             for (MethodsRecordInfo.MethodInfoOfThreadInfo methodInfoOfThreadInfo : methodInfoOfThreadInfos) {
@@ -78,16 +89,16 @@ class MethodCanaryConverter {
         }
     }
 
-    private static Comparator<MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo> methodInfoCostComparator(final long start, final long end) {
-        return (o1, o2) -> Long.compare(computeMethodCost(start, end, o2), computeMethodCost(start, end, o1));
+    private static Comparator<MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo> methodInfoCostComparator(final long startMillis, final long endMillis) {
+        return (o1, o2) -> Long.compare(computeMethodCost(startMillis, endMillis, o2), computeMethodCost(startMillis, endMillis, o1));
     }
 
-    private static long computeMethodCost(long start, long end, MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo methodInfo) {
+    private static long computeMethodCost(long startMillis, long endMillis, MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo methodInfo) {
         if (methodInfo == null) {
             return 0L;
         }
-        long methodStart = Math.max(start, methodInfo.start);
-        long methodEnd = methodInfo.end <= 0 ? end : Math.min(end, methodInfo.end);
+        long methodStart = Math.max(startMillis, methodInfo.startMillis);
+        long methodEnd = methodInfo.endMillis <= 0 ? endMillis : Math.min(endMillis, methodInfo.endMillis);
         return Math.max(methodEnd - methodStart, 0L);
     }
 

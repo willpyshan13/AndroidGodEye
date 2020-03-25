@@ -110,22 +110,14 @@ public class GodEyeConfig implements Serializable {
                 builder.withFpsConfig(fpsConfig);
             }
             // leak
-            element = getFirstElementByTagInRoot(root, "leakMemory");
+            element = getFirstElementByTagInRoot(root, "leakCanary");
             if (element != null) {
                 final String debug = element.getAttribute("debug");
-                final String debugNotification = element.getAttribute("debugNotification");
-                final String leakRefInfoProvider = element.getAttribute("leakRefInfoProvider");
                 LeakConfig leakConfig = new LeakConfig();
                 if (!TextUtils.isEmpty(debug)) {
                     leakConfig.debug = Boolean.parseBoolean(debug);
                 } else {
                     leakConfig.debug = true;
-                }
-                if (!TextUtils.isEmpty(debugNotification)) {
-                    leakConfig.debugNotification = Boolean.parseBoolean(debugNotification);
-                }
-                if (!TextUtils.isEmpty(leakRefInfoProvider)) {
-                    leakConfig.leakRefInfoProvider = leakRefInfoProvider;
                 }
                 builder.withLeakConfig(leakConfig);
             }
@@ -167,14 +159,10 @@ public class GodEyeConfig implements Serializable {
             // sm
             element = getFirstElementByTagInRoot(root, "sm");
             if (element != null) {
-                final String debugNotifyString = element.getAttribute("debugNotification");
                 final String longBlockThresholdMillisString = element.getAttribute("longBlockThresholdMillis");
                 final String shortBlockThresholdMillisString = element.getAttribute("shortBlockThresholdMillis");
                 final String dumpIntervalMillisString = element.getAttribute("dumpIntervalMillis");
                 SmConfig smConfig = new SmConfig();
-                if (!TextUtils.isEmpty(debugNotifyString)) {
-                    smConfig.debugNotification = Boolean.parseBoolean(debugNotifyString);
-                }
                 if (!TextUtils.isEmpty(longBlockThresholdMillisString)) {
                     smConfig.longBlockThresholdMillis = Long.parseLong(longBlockThresholdMillisString);
                 }

@@ -1,5 +1,67 @@
 # CHANGELOG
 
+## 3.3.0
+
+### Changed
+
+- Upgrade methodcanary to 0.15.4, support gradle DSL setting
+```
+apply plugin: 'cn.hikyson.methodcanary.plugin'
+AndroidGodEye {
+-    enableLifecycleTracer = true
+-    enableMethodTracer = true
+-    instrumentationRuleFilePath = "AndroidGodEye-MethodCanary.js"
+-    instrumentationRuleIncludeClassNamePrefix = ["cn/hikyson/godeye/sample"]
++    enableLifecycleTracer true
++    enableMethodTracer true
++    instrumentationRuleFilePath "AndroidGodEye-MethodCanary.js"
++    instrumentationRuleIncludeClassNamePrefix(["cn/hikyson/godeye/sample"])
+}
+```
+- Optimize notification content
+
+### Added
+
+- Config assets install.config section "leakCanary" added
+- ModuleName.LEAK_CANARY, use this to install leak module
+- Must add dependency ":android-godeye-toolboxes:android-godeye-leakcanary" if you need leak module
+- GodEye added api install(final GodEyeConfig godEyeConfig, NotificationConfig notificationConfig) and install(final GodEyeConfig godEyeConfig, boolean enableNotification)
+- Added notification module to debug dashboard
+- Notification module
+
+### Deprecated
+
+- LeakDetector
+- LeakConfig.debugNotification
+- LeakConfig.leakRefInfoProvider
+- ModuleName.LEAK
+- Sm module debug notification param
+- GodEye.init(application), you don't need to call this function as it will be called automatically when app startup
+
+### Removed
+
+- Config assets install.config section "leakMemory" removed
+
+### Fixed
+
+- Fps error when debugging
+- Thread module install default config error
+
+## 3.2.2
+
+### Changed
+
+- Upgrade method canary to 0.15.2
+- Add pageload lifecycle cost time to dashabord
+- Pageload time unit changed to millis
+- MethodCanary time unit changed to millis
+- Add page lifecycle methods cost time
+- Upgrade method canary
+- Optimize display of image canary
+- Upgrade method canary to 0.13.5, change 'MethodCanary.js' to 'AndroidGodEye-MethodCanary.js'
+- Sample package name changed
+- Build script changed for Github release
+
 ## 3.2.1
 
 ### Changed
@@ -39,7 +101,6 @@
 - Build error
 - Unit test failed
 - Crash failed unit test
-
 
 ## 3.2.0
 

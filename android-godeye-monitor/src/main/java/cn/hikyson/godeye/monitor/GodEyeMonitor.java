@@ -12,11 +12,13 @@ import com.koushikdutta.async.http.server.AsyncHttpServerResponse;
 import java.util.List;
 import java.util.Locale;
 
+import cn.hikyson.godeye.core.internal.notification.NotificationObserverManager;
 import cn.hikyson.godeye.core.utils.L;
 import cn.hikyson.godeye.core.utils.ThreadUtil;
 import cn.hikyson.godeye.monitor.modules.appinfo.AppInfo;
 import cn.hikyson.godeye.monitor.modules.appinfo.AppInfoLabel;
 import cn.hikyson.godeye.monitor.modules.thread.ThreadRunningProcessClassifier;
+import cn.hikyson.godeye.monitor.notification.MonitorNotificationListener;
 import cn.hikyson.godeye.monitor.server.GodEyeMonitorServer;
 import cn.hikyson.godeye.monitor.server.HttpStaticProcessor;
 import cn.hikyson.godeye.monitor.server.ModuleDriver;
@@ -69,12 +71,14 @@ public class GodEyeMonitor {
             @Override
             public void onClientAdded(List<WebSocket> webSockets, WebSocket added) {
                 ModuleDriver.instance().start(sGodEyeMonitorServer);
+                NotificationObserverManager.installNotificationListener("MONITOR", new MonitorNotificationListener(sGodEyeMonitorServer));
             }
 
             @Override
             public void onClientRemoved(List<WebSocket> webSockets, WebSocket removed) {
                 if (webSockets == null || webSockets.isEmpty()) {
                     ModuleDriver.instance().stop();
+                    NotificationObserverManager.uninstallNotificationListener("MONITOR");
                 }
             }
 
@@ -108,6 +112,7 @@ public class GodEyeMonitor {
             sGodEyeMonitorServer = null;
         }
         ModuleDriver.instance().stop();
+        NotificationObserverManager.uninstallNotificationListener("MONITOR");
         sIsWorking = false;
         L.d("GodEye monitor stopped.");
     }

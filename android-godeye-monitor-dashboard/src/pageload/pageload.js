@@ -10,6 +10,7 @@ import Util from "../libs/util";
 class Pageload extends Component {
     static BAD_DRAW_TIME = 800;
     static BAD_LOAD_TIME = 2000;
+    static BAD_LIFECYCLE_TIME = 1000;
 
     static isPageInSearch(pageLifecycleProcessedEvent, searchText) {
         searchText = searchText.toLowerCase();
@@ -66,28 +67,35 @@ class Pageload extends Component {
         return (
             <Card style={{margin: 4}} size="small" key={key}>
                 <Badge
-                    color={Util.getGreen()}/><span>{`${new Date(event.eventTimeMillis).toLocaleString()}.${event.eventTimeMillis % 1000}`}</span>
-                <br/>
+                    color={Util.getGreen()}/><span>{`${new Date(event.startTimeMillis).toLocaleString()}.${event.startTimeMillis % 1000}`}</span>
+                <br />
                 <span>&nbsp;&nbsp;&nbsp;&nbsp;
                     <strong>{`${event.pageClassName}`}</strong>{`@${event.pageHashCode}`}</span>
-                <br/>
+                <br />
                 <span>&nbsp;&nbsp;&nbsp;&nbsp;
-                    <Tag color="cyan">{event.pageType}</Tag>
-                            <Tag color="geekblue">{event.lifecycleEvent}</Tag>
-
+                    <Tag color={"ACTIVITY" === event.pageType ? "cyan" : "green"}>{event.pageType}</Tag>
+                    <Tag
+                        color={('ON_LOAD' === event.lifecycleEvent || 'ON_DRAW' === event.lifecycleEvent) ? "red" : "orange"}>{event.lifecycleEvent}</Tag>
                     {(() => {
                         if (event.lifecycleEvent === 'ON_LOAD') {
-                            return <span>Load cost <strong
-                                style={(event.processedInfo['loadTime'] > Pageload.BAD_LOAD_TIME) ? {color: Util.getRed()} : {color: Util.getGreen()}}>{event.processedInfo['loadTime']}</strong> ms</span>
+                            if (event.processedInfo['loadTime'] > 0) {
+                                return <span>Cost <strong
+                                    style={(event.processedInfo['loadTime'] > Pageload.BAD_LOAD_TIME) ? {color: Util.getRed()} : {color: Util.getGreen()}}>{event.processedInfo['loadTime']}</strong> ms</span>
+                            }
                         } else if (event.lifecycleEvent === 'ON_DRAW') {
-                            return <span>Draw cost <strong
-                                style={(event.processedInfo['drawTime'] > Pageload.BAD_DRAW_TIME) ? {color: Util.getRed()} : {color: Util.getGreen()}}>{event.processedInfo['drawTime']}</strong> ms</span>
+                            if (event.processedInfo['drawTime'] > 0) {
+                                return <span>Cost <strong
+                                    style={(event.processedInfo['drawTime'] > Pageload.BAD_DRAW_TIME) ? {color: Util.getRed()} : {color: Util.getGreen()}}>{event.processedInfo['drawTime']}</strong> ms</span>
+                            }
                         } else {
-                            return <div/>
+                            if ((event.endTimeMillis - event.startTimeMillis) > 0) {
+                                return <span>Cost <strong
+                                    style={((event.endTimeMillis - event.startTimeMillis) > Pageload.BAD_LIFECYCLE_TIME) ? {color: Util.getRed()} : {color: Util.getGreen()}}>{(event.endTimeMillis - event.startTimeMillis)}</strong> ms</span>
+                            }
                         }
                     })()}
-                        </span>
-            </Card>
+                </span>
+            </Card >
         );
     }
 
@@ -105,11 +113,11 @@ class Pageload extends Component {
 
     renderExtra() {
         return (<span>
-          <Input.Search
-              style={{width: 200}}
-              placeholder="Input search text"
-              onSearch={value => this.setState({searchText: value})}
-          />
+            <Input.Search
+                style={{width: 200}}
+                placeholder="Input search text"
+                onSearch={value => this.setState({searchText: value})}
+            />
             &nbsp;&nbsp;
             <Button
                 onClick={this.handleClear}>Clear</Button>

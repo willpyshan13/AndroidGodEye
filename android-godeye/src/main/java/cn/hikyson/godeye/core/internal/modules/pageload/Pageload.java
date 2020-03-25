@@ -5,7 +5,6 @@ import android.os.Handler;
 
 import androidx.fragment.app.Fragment;
 
-import cn.hikyson.godeye.core.GodEye;
 import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.L;
@@ -31,7 +30,6 @@ public class Pageload extends ProduceableSubject<PageLifecycleEventInfo> impleme
             return true;
         }
         this.mConfig = config;
-        PageLifecycleRecords pageLifecycleRecords = new PageLifecycleRecords();
         PageInfoProvider pageInfoProvider = new DefaultPageInfoProvider();
         try {
             pageInfoProvider = (PageInfoProvider) Class.forName(this.mConfig.pageInfoProvider()).newInstance();
@@ -39,8 +37,8 @@ public class Pageload extends ProduceableSubject<PageLifecycleEventInfo> impleme
             L.e("Pageload install warning, can not find pageload provider class. use DefaultPageInfoProvider:" + e);
         }
         Handler handler = ThreadUtil.createIfNotExistHandler(PAGELOAD_HANDLER);
-        this.mActivityLifecycleCallbacks = new ActivityLifecycleCallbacks(pageLifecycleRecords, pageInfoProvider, this, handler);
-        GodEye.instance().getApplication().registerActivityLifecycleCallbacks(mActivityLifecycleCallbacks);
+        this.mActivityLifecycleCallbacks = new ActivityLifecycleCallbacks(new PageLifecycleRecords(), pageInfoProvider, this, handler);
+        this.mActivityLifecycleCallbacks.work();
         this.mInstalled = true;
         L.d("Pageload installed.");
         return true;
@@ -57,7 +55,7 @@ public class Pageload extends ProduceableSubject<PageLifecycleEventInfo> impleme
             L.d("Pageload already uninstalled, ignore.");
             return;
         }
-        GodEye.instance().getApplication().unregisterActivityLifecycleCallbacks(mActivityLifecycleCallbacks);
+        mActivityLifecycleCallbacks.shutdown();
         mActivityLifecycleCallbacks = null;
         ThreadUtil.destoryHandler(PAGELOAD_HANDLER);
         this.mInstalled = false;
