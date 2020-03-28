@@ -29,10 +29,18 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
+            resValue("bool", "android_god_eye_manual_install", "true")
+            resValue("bool", "android_god_eye_need_notification", "false")
+            resValue("integer", "android_god_eye_monitor_port", "5390")
+            resValue("string", "android_god_eye_install_assets_path", "android-godeye-config/install_release.config")
         }
         debug {
             minifyEnabled false
             signingConfig signingConfigs.debug
+            resValue("bool", "android_god_eye_manual_install", "true")
+            resValue("bool", "android_god_eye_need_notification", "true")
+            resValue("integer", "android_god_eye_monitor_port", "5390")
+            resValue("string", "android_god_eye_install_assets_path", "android-godeye-config/install.config")
         }
     }
 }
@@ -47,13 +55,14 @@ dependencies {
     implementation 'com.jakewharton:butterknife:8.8.1'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
     implementation 'com.squareup.okhttp3:okhttp:3.14.2'
-    implementation project(':android-godeye-monitor')
-    implementation project(':android-godeye')
-    implementation project(':android-godeye-toolboxes:android-godeye-okhttp')
-    implementation project(':android-godeye-toolboxes:android-godeye-xcrash')
-    implementation project(':android-godeye-toolboxes:android-godeye-leakcanary')
     implementation 'io.reactivex.rxjava2:rxjava:2.2.2'
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.0'
+
+    implementation project(':android-godeye')
+    debugImplementation project(':android-godeye-monitor')
+    implementation project(':android-godeye-toolboxes:android-godeye-okhttp')
+    implementation project(':android-godeye-toolboxes:android-godeye-xcrash')
+    debugImplementation project(':android-godeye-toolboxes:android-godeye-leakcanary')
 }
 
 apply plugin: 'cn.hikyson.methodcanary.plugin'
